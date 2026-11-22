@@ -1,0 +1,13 @@
+[Unit]
+Description=Health gate before marking this version good
+Wants=network-online.target
+After=network-online.target sshd.service
+Before=boot-complete.target
+# A failing gate reboots, so systemd-boot spends one of the version's tries.
+FailureAction=reboot
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/demo-gate
+StandardOutput=journal+console

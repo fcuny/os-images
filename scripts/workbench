@@ -1,0 +1,11 @@
+#!/bin/sh
+# Boot a disposable Fedora VM with c2vm, with mkosi installed and sshd running, and keep it up.
+# Builds run there (scripts/build). Stop it with Ctrl-C. Needs c2vm 0.2 or later (for -scratch).
+set -eu
+. "$(dirname "$0")/lib.sh"
+ensure_key
+mkdir -p "$STATE/out"
+cd "$ROOT"
+"${C2VM:-c2vm}" boot -cpus "${CPUS:-6}" -memory "${MEMORY:-8192}" -scratch 60G \
+    -v ./mkosi:/src:ro -v ./.state/keys:/keys:ro -v ./.state/out:/out \
+    -i fedora -- bash < scripts/workbench-setup.sh 2>&1 | tee "$STATE/workbench.log"

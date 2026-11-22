@@ -1,0 +1,9 @@
+#!/bin/sh
+# build VERSION [mkosi options]: build the image at VERSION in the workbench, into .state/out/vVERSION.
+# Example: scripts/build 3 --extra-tree=/work/src/variants/broken-gate
+set -eu
+. "$(dirname "$0")/lib.sh"
+[ $# -ge 1 ] || { echo "usage: $0 VERSION [mkosi options]" >&2; exit 2; }
+ip=$(workbench_ip); [ -n "$ip" ] || { echo "no workbench running (scripts/workbench)" >&2; exit 1; }
+# shellcheck disable=SC2086
+exec ssh $SSH_OPTS "root@$ip" build-image "$@"

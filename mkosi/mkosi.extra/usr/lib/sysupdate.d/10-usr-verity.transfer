@@ -1,0 +1,16 @@
+[Transfer]
+ProtectVersion=%A
+Verify=no
+
+[Source]
+Type=url-file
+Path=http://10.0.2.2:8000/
+MatchPattern=demo_@v.usr-%a-verity.@u.raw
+
+[Target]
+Type=partition
+Path=auto
+MatchPattern=demo_@v_verity
+MatchPartitionType=usr-verity
+PartitionFlags=0
+ReadOnly=1

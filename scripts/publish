@@ -1,0 +1,12 @@
+#!/bin/sh
+# publish VERSION...: put those versions' update files in .state/updates, with a SHA256SUMS manifest.
+# The VM's sysupdate fetches them from http://10.0.2.2:8000/ (scripts/serve).
+set -eu
+. "$(dirname "$0")/lib.sh"
+[ $# -ge 1 ] || { echo "usage: $0 VERSION..." >&2; exit 2; }
+mkdir -p "$STATE/updates"
+for v in "$@"; do
+    rm -f "$STATE"/updates/demo_"$v"[.+]*   # one set of files per version
+    cp "$STATE/out/v$v/demo_$v.efi" "$STATE"/out/v"$v"/demo_"$v".usr-*.raw "$STATE/updates/"
+done
+cd "$STATE/updates" && shasum -a 256 demo_* > SHA256SUMS && cat SHA256SUMS

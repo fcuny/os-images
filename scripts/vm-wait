@@ -1,0 +1,9 @@
+#!/bin/sh
+# vm-wait [seconds]: wait until SSH into the VM works (default 180s).
+dir=$(dirname "$0")
+t=${1:-180}; s=$(date +%s)
+until "$dir/vm-ssh" true 2>/dev/null; do
+    sleep 2
+    [ $(( $(date +%s) - s )) -lt "$t" ] || { echo "no SSH after ${t}s, see .state/vm/console.log" >&2; exit 1; }
+done
+echo "SSH up after $(( $(date +%s) - s ))s"

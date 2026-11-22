@@ -1,0 +1,20 @@
+[Transfer]
+ProtectVersion=%A
+Verify=no
+
+[Source]
+Type=url-file
+Path=http://10.0.2.2:8000/
+MatchPattern=demo_@v.efi
+
+[Target]
+Type=regular-file
+Path=/EFI/Linux
+PathRelativeTo=boot
+MatchPattern=demo_@v+@l-@d.efi \
+             demo_@v+@l.efi \
+             demo_@v.efi
+Mode=0644
+TriesLeft=3
+TriesDone=0
+InstancesMax=2

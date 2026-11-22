@@ -1,0 +1,5 @@
+#!/bin/bash
+# Keep a copy of the build's /etc inside /usr, where tmpfiles links it from.
+set -e
+mkdir -p "$BUILDROOT/usr/share/factory"
+cp --archive --no-target-directory --update=none "$BUILDROOT/etc" "$BUILDROOT/usr/share/factory/etc"

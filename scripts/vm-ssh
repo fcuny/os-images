@@ -1,0 +1,5 @@
+#!/bin/sh
+# vm-ssh [command]: SSH into the VM as root.
+. "$(dirname "$0")/lib.sh"
+# shellcheck disable=SC2086
+exec ssh $SSH_OPTS -p 2222 root@127.0.0.1 "$@"

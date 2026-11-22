@@ -1,0 +1,10 @@
+#!/bin/sh
+# vm-reset VERSION: make a fresh 8G VM disk from that version's image, as if newly installed.
+set -eu
+. "$(dirname "$0")/lib.sh"
+v=${1:?usage: vm-reset VERSION}
+mkdir -p "$STATE/vm"
+rm -f "$STATE/vm/disk.raw" "$STATE/vm/vars.fd"
+cp "$STATE/out/v$v/demo_$v.raw" "$STATE/vm/disk.raw"
+truncate -s 8G "$STATE/vm/disk.raw"   # room for first boot to add the B slot and root
+echo "fresh disk from v$v"

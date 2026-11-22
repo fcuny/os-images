@@ -1,0 +1,7 @@
+# Local state: SSH keys, build outputs, the VM disk and update files.
+/.state/
+# mkosi, if run directly in mkosi/.
+/mkosi/mkosi.output/
+/mkosi/mkosi.tools/
+/mkosi/mkosi.cache/
+.DS_Store
