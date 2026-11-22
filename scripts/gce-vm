@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
 # gce-vm VERSION: start a C4A machine (Google Axion, arm64) named demo from image demo-VERSION.
 # Log in with the CA-signed key: ssh -i .state/keys/id_ed25519 root@<external IP>
 set -eu

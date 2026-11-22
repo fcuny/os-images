@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
 # shellcheck shell=sh disable=SC2034
 # Shared by the scripts in this directory. Local state (keys, builds, the VM disk) lives in .state/.
 ROOT=$(cd "$(dirname "$0")/.." && pwd)

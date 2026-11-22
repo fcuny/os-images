@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
 # publish VERSION...: put those versions' update files in .state/updates, with a SHA256SUMS manifest.
 # The VM's sysupdate fetches them from http://10.0.2.2:8000/ (scripts/serve).
 set -eu

@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
 # vm-ssh [command]: SSH into the VM as root.
 . "$(dirname "$0")/lib.sh"
 # shellcheck disable=SC2086

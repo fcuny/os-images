@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
 # vm-wait [seconds]: wait until SSH into the VM works (default 180s).
 dir=$(dirname "$0")
 t=${1:-180}; s=$(date +%s)

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
 # shellcheck shell=bash
 # Runs inside the workbench VM, as its command (see scripts/workbench).
 set -euo pipefail

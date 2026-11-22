@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: LGPL-2.1-or-later
 # Keep a copy of the build's /etc inside /usr, where tmpfiles links it from.
 set -e
 mkdir -p "$BUILDROOT/usr/share/factory"

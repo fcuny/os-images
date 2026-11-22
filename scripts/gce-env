@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
 # shellcheck shell=sh disable=SC2034
 # Sourced by the gce-* scripts. Set these in your shell first:
 #   GCE_PROJECT  the project to use

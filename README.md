@@ -146,6 +146,10 @@ Debian testing has no `updatectl`, so call `systemd-sysupdate` directly. Delete 
 - **Fedora builds aren't pinned.** Packages come from the current Fedora 45 mirrors. With `Snapshot=`, mkosi can only pin Fedora to the release compose, without updates. The Debian profile is pinned: with a fixed `--seed` and `--source-date-epoch`, two builds gave identical `/usr`, verity and UKI files. The tools tree isn't pinned yet (`ToolsTreeSnapshot=`).
 - **The hostname on GCE stays `localhost`.** systemd-imds reads it from the metadata server, but imports it in the initrd, which has neither the imds package nor networking here, and systemd-firstboot, which applies it, is turned off.
 
+## License
+
+The scripts and the configuration are licensed under LGPL-2.1-or-later, the same license as the ParticleOS files they build on. See [LICENSE](LICENSE).
+
 ## Credits
 
 The partition layout, the transfer files, the tmpfiles links for `/etc` and the PAM move come from [ParticleOS](https://github.com/systemd/particleos), which is licensed under LGPL-2.1-or-later.

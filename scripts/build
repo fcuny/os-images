@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
 # build VERSION [mkosi options]: build the image at VERSION in the workbench, into .state/out/vVERSION.
 # Example: scripts/build 3 --extra-tree=/work/src/variants/broken-gate
 set -eu

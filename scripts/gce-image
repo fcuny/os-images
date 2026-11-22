@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
 # gce-image VERSION: turn the Debian build of VERSION into a GCE image named demo-VERSION.
 # Build it first with: scripts/build VERSION --profile=debian --environment=UPDATE_URL=<see gce-env>
 set -eu
