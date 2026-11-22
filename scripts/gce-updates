@@ -1,0 +1,8 @@
+#!/bin/sh
+# gce-updates VERSION...: publish those versions' update files to the public updates bucket.
+set -eu
+. "$(dirname "$0")/lib.sh"
+. "$(dirname "$0")/gce-env"
+"$(dirname "$0")/publish" "$@" >/dev/null
+gcloud storage rsync --delete-unmatched-destination-objects "$STATE/updates" "gs://$GCE_UPDATES_BUCKET" --project "$GCE_PROJECT"
+gcloud storage ls "gs://$GCE_UPDATES_BUCKET/" --project "$GCE_PROJECT"

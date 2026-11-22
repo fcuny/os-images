@@ -19,6 +19,10 @@ The image is Fedora 45 for arm64, built with mkosi v27.1.
 - System extensions add to the read-only `/usr` without a new image: `debug` (strace and tcpdump, signed) and `extra-modules` (Fedora's kernel-modules-extra). `demo-config` is a configuration extension for `/etc`. The image only merges signed system extensions at boot (`/usr/lib/systemd/sysext.conf.d/10-signed.conf`), and trusts the certificate mkosi installs in `/usr/lib/verity.d/`.
 - A kernel panic reboots after 10 seconds (`panic=10`). A hardware watchdog (`RuntimeWatchdogSec=30s`) reboots a hung kernel or PID 1. The watchdog doesn't help with emergency mode, since PID 1 is still running there and keeps the watchdog fed.
 
+Logins use SSH certificates: the image trusts a CA whose public key ships in `/usr/share/demo/` (`TrustedUserCAKeys`), so a machine needs no keys of its own. `scripts/build` makes the CA and signs the demo key.
+
+The `debian` profile builds the same image on Debian testing (forky), for the GCE example. It pins every package to one snapshot of snapshot.debian.org.
+
 The layout follows systemd's [ParticleOS](https://github.com/systemd/particleos), without image signing.
 
 ## Layout
@@ -28,6 +32,7 @@ The layout follows systemd's [ParticleOS](https://github.com/systemd/particleos)
   - `mkosi.images/debug/`, `mkosi.images/extra-modules/`: system extensions.
   - `mkosi.images/demo-config/`: a configuration extension.
   - `mkosi.repart/`: partitions created at build time.
+  - `mkosi.profiles/debian/`: the Debian variant.
   - `mkosi.extra/usr/lib/repart.d/`: partitions created at first boot.
   - `mkosi.extra/usr/lib/sysupdate.d/`: what an update downloads, and where it writes it.
   - `mkosi.initrd.conf/`: extra configuration for mkosi's default initrd.
@@ -113,11 +118,33 @@ shasum -a 256 demo_* > SHA256SUMS
 
 Then update and reboot as above. Each try waits for `/usr`, lands in emergency mode, and reboots 30 seconds later. After the third try, systemd-boot boots the previous version. It took about 4.5 minutes in our tests.
 
+## On Google Cloud
+
+The Debian variant boots on a C4A machine (Google Axion, arm64), and updates from a public Cloud Storage bucket. Set the project, a zone with C4A machines, a private bucket for the image upload, and a public bucket for the update files (Cloud Storage can't make one folder of a bucket public):
+
+```sh
+export GCE_PROJECT=my-project GCE_ZONE=us-central1-b GCE_BUCKET=my-images GCE_UPDATES_BUCKET=my-updates
+```
+
+Then, with the workbench running:
+
+```sh
+scripts/gce-build 1      # the Debian image, fetching updates from the public bucket
+scripts/gce-build 2
+scripts/gce-image 1      # upload it and create the image demo-1
+scripts/gce-updates 2    # publish version 2
+scripts/gce-vm 1         # start a c4a-standard-1 named demo, and print its IP
+ssh -i .state/keys/id_ed25519 root@<IP> /usr/lib/systemd/systemd-sysupdate update
+```
+
+Debian testing has no `updatectl`, so call `systemd-sysupdate` directly. Delete the VM, the image and the buckets when you're done.
+
 ## Not done yet
 
 - **Update files aren't signed.** The transfers set `Verify=no`. Signed `SHA256SUMS` and signed verity root hashes come with the secure boot note.
 - **The UKI is large.** It weighs 107 MB: the kernel (18 MB), mkosi's default initrd (34 MB), and a second initrd with the kernel's modules, which is most of the rest. The base image also pulls in dracut, which never runs.
-- **Builds aren't pinned.** Packages come from the current Fedora 45 mirrors. With `Snapshot=`, mkosi can only pin Fedora to the release compose, without updates.
+- **Fedora builds aren't pinned.** Packages come from the current Fedora 45 mirrors. With `Snapshot=`, mkosi can only pin Fedora to the release compose, without updates. The Debian profile is pinned: with a fixed `--seed` and `--source-date-epoch`, two builds gave identical `/usr`, verity and UKI files. The tools tree isn't pinned yet (`ToolsTreeSnapshot=`).
+- **The hostname on GCE stays `localhost`.** systemd-imds reads it from the metadata server, but imports it in the initrd, which has neither the imds package nor networking here, and systemd-firstboot, which applies it, is turned off.
 
 ## Credits
 

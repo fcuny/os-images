@@ -3,7 +3,7 @@
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 STATE=$ROOT/.state
 KEY=$STATE/keys/id_ed25519
-SSH_OPTS="-q -i $KEY -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=5"
+SSH_OPTS="-q -i $KEY -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=5 -o ControlMaster=no -o ControlPath=none"
 
 ensure_key() {
     mkdir -p "$STATE/keys"

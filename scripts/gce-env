@@ -1,0 +1,11 @@
+# shellcheck shell=sh disable=SC2034
+# Sourced by the gce-* scripts. Set these in your shell first:
+#   GCE_PROJECT  the project to use
+#   GCE_ZONE     a zone with C4A machines, e.g. us-central1-a
+#   GCE_BUCKET   a private bucket, for uploading the image
+#   GCE_UPDATES_BUCKET  a bucket readable by anyone, for the update files only
+: "${GCE_PROJECT:?set GCE_PROJECT}" "${GCE_ZONE:?set GCE_ZONE}" "${GCE_BUCKET:?set GCE_BUCKET}" "${GCE_UPDATES_BUCKET:?set GCE_UPDATES_BUCKET}"
+GCE_REGION=${GCE_ZONE%-*}
+# Where the image fetches updates from. GCS can't make one folder of a bucket
+# public, so the update files get a public bucket of their own.
+GCE_UPDATE_URL="https://storage.googleapis.com/$GCE_UPDATES_BUCKET/"

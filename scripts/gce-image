@@ -1,0 +1,19 @@
+#!/bin/sh
+# gce-image VERSION: turn the Debian build of VERSION into a GCE image named demo-VERSION.
+# Build it first with: scripts/build VERSION --profile=debian --environment=UPDATE_URL=<see gce-env>
+set -eu
+. "$(dirname "$0")/lib.sh"
+. "$(dirname "$0")/gce-env"
+v=${1:?usage: gce-image VERSION}
+ip=$(workbench_ip); [ -n "$ip" ] || { echo "no workbench running (scripts/workbench)" >&2; exit 1; }
+# GCE imports a file named disk.raw, a whole number of GiB, in a tar.gz that GNU
+# tar wrote. The workbench has GNU tar, and the output directory is shared.
+# shellcheck disable=SC2086,SC2029
+ssh $SSH_OPTS "root@$ip" "set -e; d=\$(mktemp -d /var/tmp/gce.XXXX); cp --sparse=always /out/v$v/demo_$v.raw \$d/disk.raw
+    truncate -s \$(( (\$(stat -c %s \$d/disk.raw) + 1073741823) / 1073741824 ))G \$d/disk.raw
+    tar --format=oldgnu -Sczf /out/v$v/demo_$v.gce.tar.gz -C \$d disk.raw; rm -rf \$d"
+gcloud storage cp "$STATE/out/v$v/demo_$v.gce.tar.gz" "gs://$GCE_BUCKET/images/" --project "$GCE_PROJECT"
+gcloud compute images create "demo-$v" --project "$GCE_PROJECT" \
+    --source-uri "gs://$GCE_BUCKET/images/demo_$v.gce.tar.gz" \
+    --architecture ARM64 --guest-os-features UEFI_COMPATIBLE,GVNIC \
+    --storage-location "$GCE_REGION"

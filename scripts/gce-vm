@@ -1,0 +1,14 @@
+#!/bin/sh
+# gce-vm VERSION: start a C4A machine (Google Axion, arm64) named demo from image demo-VERSION.
+# Log in with the CA-signed key: ssh -i .state/keys/id_ed25519 root@<external IP>
+set -eu
+. "$(dirname "$0")/lib.sh"
+. "$(dirname "$0")/gce-env"
+v=${1:?usage: gce-vm VERSION}
+gcloud compute instances create demo --project "$GCE_PROJECT" --zone "$GCE_ZONE" \
+    --machine-type c4a-standard-1 --image "demo-$v" \
+    --boot-disk-type hyperdisk-balanced --boot-disk-size 10GB \
+    --network-interface nic-type=GVNIC \
+    --no-shielded-secure-boot
+gcloud compute instances describe demo --project "$GCE_PROJECT" --zone "$GCE_ZONE" \
+    --format 'value(networkInterfaces[0].accessConfigs[0].natIP)'

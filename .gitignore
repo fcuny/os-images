@@ -8,3 +8,4 @@
 # The demo signing key, made locally (see README).
 /mkosi/mkosi.key
 /mkosi/mkosi.crt
+/mkosi/mkosi.extra/usr/share/demo/ssh-user-ca.pub

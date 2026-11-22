@@ -11,6 +11,14 @@ if [ ! -f "$ROOT/mkosi/mkosi.key" ]; then
         -keyout "$ROOT/mkosi/mkosi.key" -out "$ROOT/mkosi/mkosi.crt" 2>/dev/null
     echo "made a demo signing key in mkosi/mkosi.key"
 fi
+# An SSH CA for logins: its public key ships in the image (TrustedUserCAKeys),
+# and the demo login key gets a certificate for root, valid for a year.
+ensure_key
+CA=$STATE/keys/ssh-user-ca
+[ -f "$CA" ] || ssh-keygen -q -t ed25519 -N '' -C os-images-demo-ca -f "$CA"
+mkdir -p "$ROOT/mkosi/mkosi.extra/usr/share/demo"
+cp "$CA.pub" "$ROOT/mkosi/mkosi.extra/usr/share/demo/ssh-user-ca.pub"
+[ -f "$KEY-cert.pub" ] || ssh-keygen -q -s "$CA" -I os-images-demo -n root -V +52w "$KEY.pub"
 ip=$(workbench_ip); [ -n "$ip" ] || { echo "no workbench running (scripts/workbench)" >&2; exit 1; }
 # shellcheck disable=SC2086
 exec ssh $SSH_OPTS "root@$ip" build-image "$@"

@@ -5,3 +5,13 @@ if [[ -d /etc/pam.d ]]; then
     find /etc/pam.d -mindepth 1 -exec mv {} /usr/lib/pam.d \;
     rmdir /etc/pam.d
 fi
+
+# Debian's tmpfiles rules recreate /etc/pam.d; it's a link to /usr/lib/pam.d here.
+if [[ -f /usr/lib/tmpfiles.d/debian.conf ]]; then
+    sed -i '/\/etc\/pam.d/d' /usr/lib/tmpfiles.d/debian.conf
+fi
+
+# Point updates at another server: mkosi --environment=UPDATE_URL=https://...
+if [[ -n "${UPDATE_URL:-}" ]]; then
+    sed -i "s|^Path=http://10.0.2.2:8000/\$|Path=${UPDATE_URL}|" /usr/lib/sysupdate.d/*.transfer
+fi
