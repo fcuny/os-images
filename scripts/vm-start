@@ -1,6 +1,7 @@
 #!/bin/sh
 # Boot .state/vm/disk.raw on the Mac with qemu and Apple's hypervisor (UEFI, virtio disk and network).
 # Console goes to .state/vm/console.log, SSH is forwarded to 127.0.0.1:2222. Runs in the foreground.
+# EXTRA_CMDLINE adds kernel arguments, passed to systemd-stub over SMBIOS (e.g. systemd.volatile=yes).
 set -eu
 . "$(dirname "$0")/lib.sh"
 ensure_key
@@ -8,6 +9,8 @@ VM=$STATE/vm
 Q=${QEMU_SHARE:-$(brew --prefix qemu)/share/qemu}
 [ -f "$VM/vars.fd" ] || cp "$Q/edk2-arm-vars.fd" "$VM/vars.fd"
 key=$(base64 < "$KEY.pub" | tr -d '\n')
+set --
+[ -z "${EXTRA_CMDLINE:-}" ] || set -- -smbios "type=11,value=io.systemd.stub.kernel-cmdline-extra=$EXTRA_CMDLINE"
 exec qemu-system-aarch64 -M virt -accel hvf -cpu host -smp 4 -m 2048 \
     -drive if=pflash,format=raw,readonly=on,file="$Q/edk2-aarch64-code.fd" \
     -drive if=pflash,format=raw,file="$VM/vars.fd" \
@@ -16,4 +19,4 @@ exec qemu-system-aarch64 -M virt -accel hvf -cpu host -smp 4 -m 2048 \
     -device virtio-rng-pci -device i6300esb \
     -smbios "type=11,value=io.systemd.credential.binary:ssh.authorized_keys.root=$key" \
     -smbios "type=11,value=io.systemd.credential:passwd.plaintext-password.root=demo" \
-    -display none -serial file:"$VM/console.log" -pidfile "$VM/qemu.pid"
+    -display none -serial file:"$VM/console.log" -pidfile "$VM/qemu.pid" "$@"
