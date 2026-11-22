@@ -1,0 +1,12 @@
+[Unit]
+Description=Reboot a stuck boot, so systemd-boot can spend one of this version's tries
+DefaultDependencies=no
+# Only while this boot entry is being assessed, i.e. systemd-boot booted it with
+# a counter. A version already marked good must not reboot in a loop.
+ConditionPathExists=/sys/firmware/efi/efivars/LoaderBootCountPath-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f
+SuccessAction=reboot-force
+
+[Service]
+Type=oneshot
+# Leave the failure on the console for a while before rebooting.
+ExecStart=/bin/sh -c 'echo "stuck boot: rebooting in 30s to try the next boot entry" >/dev/console; sleep 30'

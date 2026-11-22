@@ -14,6 +14,8 @@ The image is Fedora 45 for arm64, built with mkosi v27.1.
 - `/etc` starts empty. systemd-tmpfiles links most of it back to a copy of the build's `/etc` inside `/usr/share/factory/etc`.
 - `systemd-sysupdate` downloads a new `/usr` into the empty slot and a new UKI with 3 boot tries.
 - A health gate (`demo-gate.service`) must pass before `boot-complete.target`. If it fails, the machine reboots. After 3 failed tries, systemd-boot goes back to the previous version.
+- A boot that gets stuck also reboots. If the initrd or the system lands in emergency mode, `demo-stuck-boot-reboot.service` reboots after 30 seconds. It only runs while a version is being assessed (the boot entry has a counter), so a version already marked good can't reboot in a loop. Rebooting is what lets systemd-boot count the failed try.
+- A kernel panic reboots after 10 seconds (`panic=10`). A hardware watchdog (`RuntimeWatchdogSec=30s`) reboots a hung kernel or PID 1. The watchdog doesn't help with emergency mode, since PID 1 is still running there and keeps the watchdog fed.
 
 The layout follows systemd's [ParticleOS](https://github.com/systemd/particleos), without image signing.
 
@@ -23,6 +25,7 @@ The layout follows systemd's [ParticleOS](https://github.com/systemd/particleos)
   - `mkosi.repart/`: partitions created at build time.
   - `mkosi.extra/usr/lib/repart.d/`: partitions created at first boot.
   - `mkosi.extra/usr/lib/sysupdate.d/`: what an update downloads, and where it writes it.
+  - `mkosi.initrd.conf/`: extra configuration for mkosi's default initrd.
   - `variants/broken-gate/`: an extra tree that makes the health gate fail, to test rollback.
 - `scripts/`: build in a Linux VM, boot on the Mac, serve updates.
 
@@ -83,6 +86,17 @@ scripts/vm-ssh systemctl reboot
 ```
 
 The VM reboots three times by itself, marks version 3 bad (`demo_3+0-3.efi`), and comes back on version 2. The console is in `.state/vm/console.log`.
+
+To watch a stuck boot, publish an update whose UKI can't find its `/usr`. Renaming the `/usr` file gives the partition a UUID that doesn't match the UKI's `usrhash=`:
+
+```sh
+scripts/publish 2
+cd .state/updates
+mv demo_2.usr-arm64.*.raw demo_2.usr-arm64.00000000000000000000000000000bad.raw
+shasum -a 256 demo_* > SHA256SUMS
+```
+
+Then update and reboot as above. Each try waits for `/usr`, lands in emergency mode, and reboots 30 seconds later. After the third try, systemd-boot boots the previous version. It took about 4.5 minutes in our tests.
 
 ## Not done yet
 
