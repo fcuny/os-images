@@ -4,6 +4,13 @@
 set -eu
 . "$(dirname "$0")/lib.sh"
 [ $# -ge 1 ] || { echo "usage: $0 VERSION [mkosi options]" >&2; exit 2; }
+# The key that signs the debug extension. mkosi also installs its certificate in
+# the image's /usr/lib/verity.d, so the image trusts what this key signs.
+if [ ! -f "$ROOT/mkosi/mkosi.key" ]; then
+    openssl req -x509 -newkey rsa:2048 -nodes -days 365 -subj "/CN=os-images demo extensions" \
+        -keyout "$ROOT/mkosi/mkosi.key" -out "$ROOT/mkosi/mkosi.crt" 2>/dev/null
+    echo "made a demo signing key in mkosi/mkosi.key"
+fi
 ip=$(workbench_ip); [ -n "$ip" ] || { echo "no workbench running (scripts/workbench)" >&2; exit 1; }
 # shellcheck disable=SC2086
 exec ssh $SSH_OPTS "root@$ip" build-image "$@"

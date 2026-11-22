@@ -5,3 +5,6 @@
 /mkosi/mkosi.tools/
 /mkosi/mkosi.cache/
 .DS_Store
+# The demo signing key, made locally (see README).
+/mkosi/mkosi.key
+/mkosi/mkosi.crt
