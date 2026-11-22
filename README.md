@@ -14,7 +14,7 @@ The image is Fedora 45 for arm64, built with mkosi v27.1.
 - `/etc` starts empty. systemd-tmpfiles links most of it back to a copy of the build's `/etc` inside `/usr/share/factory/etc`.
 - `systemd-sysupdate` downloads a new `/usr` into the empty slot and a new UKI with 3 boot tries.
 - A health gate (`demo-gate.service`) must pass before `boot-complete.target`. If it fails, the machine reboots. After 3 failed tries, systemd-boot goes back to the previous version.
-- A boot that gets stuck also reboots. If the initrd or the system lands in emergency mode, `demo-stuck-boot-reboot.service` reboots after 30 seconds. It only runs while a version is being assessed (the boot entry has a counter), so a version already marked good can't reboot in a loop. Rebooting is what lets systemd-boot count the failed try.
+- A boot that gets stuck also reboots. If the initrd or the system lands in emergency mode, `demo-stuck-boot-reboot.service` reboots after 30 seconds. It only runs while a version is being assessed (the boot entry has a counter), so a version already marked good can't reboot in a loop. systemd-boot already counted the try when it booted the version. Rebooting is what gives it the next one.
 - A kernel panic reboots after 10 seconds (`panic=10`). A hardware watchdog (`RuntimeWatchdogSec=30s`) reboots a hung kernel or PID 1. The watchdog doesn't help with emergency mode, since PID 1 is still running there and keeps the watchdog fed.
 
 The layout follows systemd's [ParticleOS](https://github.com/systemd/particleos), without image signing.
