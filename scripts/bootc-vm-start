@@ -1,0 +1,5 @@
+#!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# bootc-vm-start: boot .state/bootc-vm/disk.raw like vm-start does. vm-ssh and vm-wait work as for mkosi.
+. "$(dirname "$0")/lib.sh"
+VM_DIR=$STATE/bootc-vm exec "$(dirname "$0")/vm-start" "$@"

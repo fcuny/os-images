@@ -1,0 +1,6 @@
+#!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# workbench-ssh [command]: SSH into the running workbench VM as root.
+. "$(dirname "$0")/lib.sh"
+# shellcheck disable=SC2086
+exec ssh $SSH_OPTS root@"$(workbench_ip)" "$@"

@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 # Boot .state/vm/disk.raw on the Mac with qemu and Apple's hypervisor (UEFI, virtio disk and network).
 # Console goes to .state/vm/console.log, SSH is forwarded to 127.0.0.1:2222. Runs in the foreground.
-# EXTRA_CMDLINE adds kernel arguments, passed to systemd-stub over SMBIOS (e.g. systemd.volatile=yes).
+# VM_DIR picks another disk directory (default .state/vm). EXTRA_CMDLINE adds kernel arguments, passed to systemd-stub over SMBIOS (e.g. systemd.volatile=yes).
 set -eu
 . "$(dirname "$0")/lib.sh"
 ensure_key
-VM=$STATE/vm
+VM=${VM_DIR:-$STATE/vm}
 Q=${QEMU_SHARE:-$(brew --prefix qemu)/share/qemu}
 [ -f "$VM/vars.fd" ] || cp "$Q/edk2-arm-vars.fd" "$VM/vars.fd"
 key=$(base64 < "$KEY.pub" | tr -d '\n')

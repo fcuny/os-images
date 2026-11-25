@@ -1,0 +1,13 @@
+#!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# Boot a disposable Fedora VM with c2vm, with podman installed and sshd running, and keep it up.
+# bootc images are built there. Stop it with Ctrl-C. Needs c2vm 0.2 or later, and a kernel with
+# fs-verity and EROFS for `bootc install` (KERNEL, passed to c2vm's -kernel, until c2vm's default has them).
+set -eu
+. "$(dirname "$0")/lib.sh"
+ensure_key
+mkdir -p "$STATE/out"
+cd "$ROOT"
+"${C2VM:-c2vm}" boot ${KERNEL:+-kernel "$KERNEL"} -cpus "${CPUS:-6}" -memory "${MEMORY:-8192}" -scratch 80G \
+    -v ./bootc:/src:ro -v ./.state/keys:/keys:ro -v ./.state/out:/out \
+    -i fedora -- bash < scripts/bootc-workbench-setup.sh 2>&1 | tee "$STATE/workbench.log"

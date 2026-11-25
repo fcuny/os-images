@@ -1,8 +1,8 @@
 # os-images
 
-Working examples of image-based Linux systems: a read-only `/usr` checked by dm-verity, A/B updates, and automatic rollback. They go with the notes on [fcuny.net](https://fcuny.net/notes/).
+Working examples of image-based Linux systems: a read-only operating system checked by verity, atomic updates, and rollback. They go with the notes on [fcuny.net](https://fcuny.net/notes/).
 
-For now there is one example, built with [mkosi](https://github.com/systemd/mkosi). A bootc example will follow.
+There are two examples of the same idea: one built with [mkosi](https://github.com/systemd/mkosi), and one with [bootc](https://github.com/bootc-dev/bootc).
 
 ## What the mkosi image does
 
@@ -37,6 +37,7 @@ The layout follows systemd's [ParticleOS](https://github.com/systemd/particleos)
   - `mkosi.extra/usr/lib/sysupdate.d/`: what an update downloads, and where it writes it.
   - `mkosi.initrd.conf/`: extra configuration for mkosi's default initrd.
   - `variants/broken-gate/`: an extra tree that makes the health gate fail, to test rollback.
+- `bootc/`: the bootc image, a `Containerfile` and the files it copies in (`rootfs/`).
 - `scripts/`: build in a Linux VM, boot on the Mac, serve updates.
 
 ## Requirements
@@ -139,11 +140,62 @@ ssh -i .state/keys/id_ed25519 root@<IP> /usr/lib/systemd/systemd-sysupdate updat
 
 Debian testing has no `updatectl`, so call `systemd-sysupdate` directly. Delete the VM, the image and the buckets when you're done.
 
+## The bootc image
+
+The image is Debian testing (forky) for arm64, built as a container image with podman, and installed and updated with bootc v1.17.5 on its composefs backend.
+
+- Nobody publishes a Debian bootc base image, so the `Containerfile` builds one from `debian:forky`. Debian doesn't package bootc either: the first stage builds it from its git tag.
+- An empty `/usr/lib/composefs/setup-root-conf.toml` marks the image for the composefs backend, and dracut adds bootc's module to the initramfs. The kernel and the initramfs live in `/usr/lib/modules/<version>/`, where bootc looks for them.
+- `bootc install to-disk` makes a GPT disk with an ESP and an ext4 root with fs-verity. The root holds the composefs object store, and a writable `/etc` and `/var` for each deployment. The boot entry has no `root=`: the initramfs finds the root by its partition type.
+- `/` is a read-only composefs mount, checked by fs-verity. `/root`, `/home`, `/srv`, `/mnt` and `/opt` are links into `/var`, since the image can't be written.
+- An update pulls the changed layers from a registry, and stages a new deployment, which bootc writes to the ESP at shutdown. `/etc` is merged: local changes carry over to the new version.
+- bootc needs podman on the host, to manage its image storage, even if nothing else runs containers.
+- Automatic updates are off: `bootc-fetch-apply-updates.timer` is installed but not enabled.
+- There's no automatic rollback. The composefs backend doesn't set up boot counting, so `bootc rollback` is the only way back.
+
+The registry runs in the workbench and serves over plain HTTP. Its address is the workbench's IP, which is built into the image (`/etc/containers/registries.conf.d/50-demo-registry.conf`) and into the image name the host tracks. If the workbench comes back with another IP, rebuild and reinstall.
+
+### bootc walkthrough
+
+The workbench needs a kernel with fs-verity, EROFS, VFAT and GPT support. c2vm's default kernel doesn't have them yet ([fcuny/c2vm#116](https://github.com/fcuny/c2vm/pull/116)). Until it does, pass a kernel built by that PR's CI in `KERNEL` (the directory with `boot/kernel`):
+
+```sh
+KERNEL=path/to/arm64 scripts/bootc-workbench
+```
+
+Build version 1, install it on a fresh disk, and boot it. The first build compiles bootc, which takes about 6 minutes. A rebuild takes seconds.
+
+```sh
+scripts/bootc-build 1
+scripts/bootc-install 1
+scripts/bootc-vm-start
+```
+
+Each build is pushed as `:vN` and as `:latest`, and the installed host tracks `:latest`. Build version 2, then update and reboot:
+
+```sh
+scripts/vm-wait
+scripts/bootc-build 2
+scripts/vm-ssh bootc upgrade
+scripts/vm-ssh systemctl reboot
+scripts/vm-wait
+scripts/vm-ssh 'cat /usr/lib/demo-version; bootc status'
+```
+
+Version 2 changes one layer of 170 bytes, and the update downloads about 15 KiB. To go back:
+
+```sh
+scripts/vm-ssh bootc rollback
+scripts/vm-ssh systemctl reboot
+```
+
 ## Not done yet
 
 - **Update files aren't signed.** The transfers set `Verify=no`. Signed `SHA256SUMS` and signed verity root hashes come with the secure boot note.
 - **The UKI is large.** It weighs 107 MB: the kernel (18 MB), mkosi's default initrd (34 MB), and a second initrd with the kernel's modules, which is most of the rest. The base image also pulls in dracut, which never runs.
 - **Fedora builds aren't pinned.** Packages come from the current Fedora 45 mirrors. With `Snapshot=`, mkosi can only pin Fedora to the release compose, without updates. The Debian profile is pinned: with a fixed `--seed` and `--source-date-epoch`, two builds gave identical `/usr`, verity and UKI files. The tools tree isn't pinned yet (`ToolsTreeSnapshot=`).
+- **bootc images aren't signed.** The host pulls with `ostree-unverified-image:`, so nothing checks who built an update.
+- **Debian's package database goes stale on bootc hosts.** dpkg keeps it in `/var/lib/dpkg`, which bootc only unpacks at install. After an update, `dpkg -l` still describes the version that was installed.
 - **The hostname on GCE stays `localhost`.** systemd-imds reads it from the metadata server, but imports it in the initrd, which has neither the imds package nor networking here, and systemd-firstboot, which applies it, is turned off.
 
 ## License
@@ -155,3 +207,5 @@ The scripts and the configuration are licensed under LGPL-2.1-or-later, the same
 The partition layout, the transfer files, the tmpfiles links for `/etc` and the PAM move come from [ParticleOS](https://github.com/systemd/particleos), which is licensed under LGPL-2.1-or-later.
 
 The base image and the extensions follow mkosi's guide, [Building system extensions with mkosi](https://github.com/systemd/mkosi/blob/v27.1/docs/sysext.md).
+
+The bootc image follows bootc's [requirements for compatible images](https://github.com/bootc-dev/bootc/blob/main/docs/src/bootc-compatible-images.7.md), and [bootcrew](https://github.com/bootcrew/mono)'s Debian image, which showed that the composefs backend works on Debian.

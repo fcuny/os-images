@@ -1,0 +1,10 @@
+#!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# bootc-build VERSION: build the bootc image at VERSION in the workbench, and push it to the
+# workbench's registry as :vVERSION and :latest. The build log is in .state/out/bootc-build-vVERSION.log.
+set -eu
+. "$(dirname "$0")/lib.sh"
+[ $# -eq 1 ] || { echo "usage: $0 VERSION" >&2; exit 2; }
+ip=$(workbench_ip); [ -n "$ip" ] || { echo "no workbench running (scripts/bootc-workbench)" >&2; exit 1; }
+# shellcheck disable=SC2086,SC2029
+exec ssh $SSH_OPTS "root@$ip" bootc-build-image "$1" "$ip:5000"

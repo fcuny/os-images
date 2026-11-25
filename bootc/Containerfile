@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# A Debian forky bootc image, built from scratch, for the composefs backend.
+# Debian doesn't package bootc, so the first stage builds it from a pinned tag.
+
+ARG BOOTC_VERSION=v1.17.5
+
+FROM docker.io/library/debian:forky AS builder
+ARG BOOTC_VERSION
+RUN apt-get update -q && \
+    apt-get install -y -q --no-install-recommends \
+        ca-certificates curl git build-essential pkgconf go-md2man \
+        libzstd-dev libssl-dev libostree-dev libselinux1-dev libclang-dev
+ENV CARGO_HOME=/opt/rust RUSTUP_HOME=/opt/rust PATH=/opt/rust/bin:$PATH
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -q -y --profile minimal
+RUN git clone -q --depth 1 --branch "$BOOTC_VERSION" https://github.com/bootc-dev/bootc /src
+WORKDIR /src
+RUN make bin install DESTDIR=/output DISABLE_DOCS=1
+
+FROM docker.io/library/debian:forky
+COPY --from=builder /output/ /
+RUN apt-get update -q && \
+    apt-get install -y -q --no-install-recommends \
+        systemd systemd-sysv systemd-boot systemd-boot-efi systemd-resolved udev dbus \
+        linux-image-arm64 dracut \
+        libostree-1-1 composefs skopeo podman zstd \
+        e2fsprogs dosfstools fdisk util-linux \
+        openssh-server ca-certificates iproute2 less && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+COPY rootfs/ /
+
+# The kernel and initramfs live next to the kernel's modules; /boot stays empty.
+# Debian's kernel package already ships /usr/lib/modules/$kver/vmlinuz.
+RUN kver=$(ls /usr/lib/modules) && \
+    test -f /usr/lib/modules/"$kver"/vmlinuz && \
+    dracut --force --no-hostonly --reproducible --kver "$kver" /usr/lib/modules/"$kver"/initramfs.img && \
+    rm -rf /boot/* /var/log/* /var/cache/* /var/lib/dpkg/*-old && \
+    mkdir -p /sysroot
+
+# The image is mounted read-only. Directories that hold machine state
+# point into /var, which stays writable; tmpfiles creates their targets.
+# The base container's /etc/hostname names the tool that built it.
+RUN rm -rf /root /home /srv /mnt /opt /etc/hostname && \
+    ln -s var/roothome /root && ln -s var/home /home && ln -s var/srv /srv && \
+    ln -s var/mnt /mnt && ln -s var/opt /opt
+
+RUN systemctl enable systemd-networkd systemd-resolved ssh
+
+# Last, so that a new version only changes the final layers.
+# REGISTRY is the workbench's registry, which serves updates over plain HTTP.
+ARG REGISTRY
+ARG IMAGE_VERSION=1
+RUN if [ -n "$REGISTRY" ]; then \
+        mkdir -p /etc/containers/registries.conf.d && \
+        printf '[[registry]]\nlocation = "%s"\ninsecure = true\n' "$REGISTRY" \
+            > /etc/containers/registries.conf.d/50-demo-registry.conf; \
+    fi && \
+    echo "$IMAGE_VERSION" > /usr/lib/demo-version
+LABEL containers.bootc=1 org.opencontainers.image.version=$IMAGE_VERSION
+RUN bootc container lint
