@@ -1,0 +1,12 @@
+#!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# vm-stop: power off the VM that vm-start booted, like pulling the plug. Its disk stays.
+# VM_DIR picks another disk directory (default .state/vm), as for vm-start.
+set -eu
+. "$(dirname "$0")/lib.sh"
+VM=${VM_DIR:-$STATE/vm}
+if [ -f "$VM/qemu.pid" ] && kill "$(cat "$VM/qemu.pid")" 2>/dev/null; then
+    echo "VM stopped"
+else
+    echo "no VM running from $VM"
+fi

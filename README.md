@@ -78,6 +78,8 @@ scripts/vm-reset 1
 scripts/vm-start
 ```
 
+`scripts/vm-stop` powers off the VM, and `scripts/workbench-stop` stops the build VM.
+
 Then update and reboot:
 
 ```sh
@@ -189,6 +191,8 @@ Version 2 changes one layer of 170 bytes, and the update downloads about 15 KiB.
 scripts/vm-ssh bootc rollback
 scripts/vm-ssh systemctl reboot
 ```
+
+`scripts/bootc-vm-stop` powers off the VM and keeps its disk. `scripts/workbench-stop` stops the workbench, and its registry goes with it.
 
 ## Not done yet
 

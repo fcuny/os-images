@@ -1,0 +1,5 @@
+#!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# bootc-vm-stop: power off the VM that bootc-vm-start booted. Its disk stays.
+. "$(dirname "$0")/lib.sh"
+VM_DIR=$STATE/bootc-vm exec "$(dirname "$0")/vm-stop"

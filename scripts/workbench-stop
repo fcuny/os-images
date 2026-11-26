@@ -1,0 +1,11 @@
+#!/bin/sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# workbench-stop: stop the running workbench VM (scripts/workbench or scripts/bootc-workbench).
+# The VM's command is sshd, so stopping its listener ends the VM. Its storage goes with it.
+set -eu
+dir=$(dirname "$0")
+# shellcheck disable=SC2016
+"$dir/workbench-ssh" 'for p in /proc/[0-9]*; do
+    tr "\0" " " < "$p/cmdline" 2>/dev/null | grep -q "\[listener\]" && kill -TERM "${p#/proc/}"
+done' || true
+echo "workbench stopping"
