@@ -150,6 +150,7 @@ The image is Debian testing (forky) for arm64, built as a container image with p
 - `/` is a read-only composefs mount, checked by fs-verity. `/root`, `/home`, `/srv`, `/mnt` and `/opt` are links into `/var`, since the image can't be written.
 - An update pulls the changed layers from a registry, and stages a new deployment, which bootc writes to the ESP at shutdown. `/etc` is merged: local changes carry over to the new version.
 - bootc needs podman on the host, to manage its image storage, even if nothing else runs containers.
+- The host has no package database. dpkg keeps it in `/var/lib/dpkg`, which bootc only unpacks at install, so after an update it would describe the version that was installed. The build deletes it, and `dpkg -l` on the host lists nothing.
 - Automatic updates are off: `bootc-fetch-apply-updates.timer` is installed but not enabled.
 - There's no automatic rollback. The composefs backend doesn't set up boot counting, so `bootc rollback` is the only way back.
 
@@ -195,7 +196,6 @@ scripts/vm-ssh systemctl reboot
 - **The UKI is large.** It weighs 107 MB: the kernel (18 MB), mkosi's default initrd (34 MB), and a second initrd with the kernel's modules, which is most of the rest. The base image also pulls in dracut, which never runs.
 - **Fedora builds aren't pinned.** Packages come from the current Fedora 45 mirrors. With `Snapshot=`, mkosi can only pin Fedora to the release compose, without updates. The Debian profile is pinned: with a fixed `--seed` and `--source-date-epoch`, two builds gave identical `/usr`, verity and UKI files. The tools tree isn't pinned yet (`ToolsTreeSnapshot=`).
 - **bootc images aren't signed.** The host pulls with `ostree-unverified-image:`, so nothing checks who built an update.
-- **Debian's package database goes stale on bootc hosts.** dpkg keeps it in `/var/lib/dpkg`, which bootc only unpacks at install. After an update, `dpkg -l` still describes the version that was installed.
 - **The hostname on GCE stays `localhost`.** systemd-imds reads it from the metadata server, but imports it in the initrd, which has neither the imds package nor networking here, and systemd-firstboot, which applies it, is turned off.
 
 ## License

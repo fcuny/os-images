@@ -25,7 +25,10 @@ RUN apt-get update -q && \
         libostree-1-1 composefs skopeo podman zstd \
         e2fsprogs dosfstools fdisk util-linux \
         openssh-server ca-certificates iproute2 less && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get clean && \
+    # No package database on the host: bootc unpacks /var only at install,
+    # so dpkg's database would describe the installed version after an update.
+    rm -rf /var/lib/apt /var/lib/dpkg /var/cache/apt
 
 COPY rootfs/ /
 
@@ -34,7 +37,7 @@ COPY rootfs/ /
 RUN kver=$(ls /usr/lib/modules) && \
     test -f /usr/lib/modules/"$kver"/vmlinuz && \
     dracut --force --no-hostonly --reproducible --kver "$kver" /usr/lib/modules/"$kver"/initramfs.img && \
-    rm -rf /boot/* /var/log/* /var/cache/* /var/lib/dpkg/*-old && \
+    rm -rf /boot/* /var/log/* /var/cache/* && \
     mkdir -p /sysroot
 
 # The image is mounted read-only. Directories that hold machine state
