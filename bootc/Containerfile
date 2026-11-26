@@ -26,9 +26,12 @@ RUN apt-get update -q && \
         e2fsprogs dosfstools fdisk util-linux \
         openssh-server ca-certificates iproute2 less && \
     apt-get clean && \
-    # No package database on the host: bootc unpacks /var only at install,
-    # so dpkg's database would describe the installed version after an update.
-    rm -rf /var/lib/apt /var/lib/dpkg /var/cache/apt
+    # bootc unpacks /var only at install, so dpkg's database there would
+    # describe the installed version after an update. Keep it in the image
+    # instead, where Fedora keeps rpm's; tmpfiles links it on older hosts.
+    rm -rf /var/lib/apt /var/cache/apt && \
+    mkdir -p /usr/lib/sysimage && mv /var/lib/dpkg /usr/lib/sysimage/dpkg && \
+    ln -s ../../usr/lib/sysimage/dpkg /var/lib/dpkg
 
 COPY rootfs/ /
 

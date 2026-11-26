@@ -152,7 +152,7 @@ The image is Debian testing (forky) for arm64, built as a container image with p
 - `/` is a read-only composefs mount, checked by fs-verity. `/root`, `/home`, `/srv`, `/mnt` and `/opt` are links into `/var`, since the image can't be written.
 - An update pulls the changed layers from a registry, and stages a new deployment, which bootc writes to the ESP at shutdown. `/etc` is merged: local changes carry over to the new version.
 - bootc needs podman on the host, to manage its image storage, even if nothing else runs containers.
-- The host has no package database. dpkg keeps it in `/var/lib/dpkg`, which bootc only unpacks at install, so after an update it would describe the version that was installed. The build deletes it, and `dpkg -l` on the host lists nothing.
+- dpkg's database lives in the image, at `/usr/lib/sysimage/dpkg`, with a link from `/var/lib/dpkg`. In `/var`, which bootc only unpacks at install, it would describe the installed version after an update. In the image, `dpkg -l` lists what the booted version ships, read-only, and images built `FROM` this one can use `apt`.
 - Automatic updates are off. bootc's preset enables `bootc-fetch-apply-updates.timer`, systemd applies presets on a host's first boot, and the image's own preset (`80-demo.preset`) disables it.
 - Each host makes its own machine ID and SSH host keys on its first boot. Installing the packages made both in the image, so the build removes them and leaves `/etc/machine-id` as `uninitialized`.
 - There's no automatic rollback. The composefs backend doesn't set up boot counting, so `bootc rollback` is the only way back.
