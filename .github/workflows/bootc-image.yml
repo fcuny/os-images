@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# Build the bootc image at a version and publish it to ghcr.io as :vVERSION and :latest.
+# Hosts installed from it track :latest and pull it without credentials once the
+# package is public (the package's settings on GitHub, once).
+name: bootc image
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Image version, a whole number
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    # The image is arm64, like the laptop VM and GCE's C4A machines.
+    runs-on: ubuntu-24.04-arm
+    env:
+      VERSION: ${{ inputs.version }}
+      IMAGE: ghcr.io/${{ github.repository }}/debian-bootc
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the version
+        run: |
+          case $VERSION in ''|*[!0-9]*) echo "version must be a whole number: $VERSION" >&2; exit 1;; esac
+
+      - name: Install podman
+        run: |
+          command -v podman >/dev/null || { sudo apt-get update -q && sudo apt-get install -y -q podman; }
+          podman --version
+
+      # The Containerfile removes /etc/hostname, which podman bind-mounts into RUN
+      # steps unless told not to. No REGISTRY argument: ghcr.io needs no insecure entry.
+      - name: Build
+        working-directory: bootc
+        run: |
+          podman build --no-hostname --no-hosts \
+              --build-arg IMAGE_VERSION="$VERSION" \
+              --label org.opencontainers.image.source="https://github.com/${{ github.repository }}" \
+              -t "$IMAGE:v$VERSION" -t "$IMAGE:latest" .
+
+      - name: Push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GH_TOKEN" | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+          podman push "$IMAGE:v$VERSION"
+          podman push "$IMAGE:latest"

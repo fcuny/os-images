@@ -1,0 +1,2 @@
+# GCE's Arm machines print the serial console on ttyAMA0, as qemu's virt does.
+kargs = ["console=ttyAMA0"]

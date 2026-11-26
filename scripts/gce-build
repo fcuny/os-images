@@ -3,5 +3,6 @@
 # gce-build VERSION [mkosi options]: build the Debian image at VERSION, fetching updates from the bucket.
 set -eu
 . "$(dirname "$0")/gce-env"
+: "${GCE_UPDATES_BUCKET:?set GCE_UPDATES_BUCKET}"
 v=${1:?usage: gce-build VERSION [mkosi options]}; shift
 exec "$(dirname "$0")/build" "$v" --profile=debian --environment=UPDATE_URL="$GCE_UPDATE_URL" "$@"

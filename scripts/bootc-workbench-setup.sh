@@ -47,17 +47,19 @@ BUILD
 
 cat > /usr/local/bin/bootc-install-image <<'INSTALL'
 #!/bin/bash
-# bootc-install-image VERSION REGISTRY: install that version on a fresh 10G disk, into /out/bootc-disk.raw.
+# bootc-install-image VERSION REGISTRY [KEYS]: install that version on a fresh 10G disk, into /out/bootc-disk.raw.
 # The installed host tracks :latest, so `bootc upgrade` follows new builds.
+# KEYS, a file under /keys, becomes root's authorized_keys, for hosts with no other way in.
 set -euo pipefail
-v=$1 img=$2/debian-bootc
+v=$1 img=$2/debian-bootc keys=()
+[ -z "${3:-}" ] || keys=(--root-ssh-authorized-keys "$3")
 rm -f /work/disk.raw && truncate -s 10G /work/disk.raw
 # bootc runs from the image itself. It needs the host's devices, udev and
 # container storage, and runs some steps in PID 1's mount namespace.
 podman run --rm --network=host --privileged --pid=host --ipc=host --security-opt label=disable \
-    -v /dev:/dev -v /run/udev:/run/udev -v /var/lib/containers:/var/lib/containers -v /work:/data \
+    -v /dev:/dev -v /run/udev:/run/udev -v /var/lib/containers:/var/lib/containers -v /work:/data -v /keys:/keys:ro \
     "$img:v$v" bootc install to-disk --via-loopback /data/disk.raw --wipe \
-    --bootloader systemd --generic-image --target-imgref "$img:latest" \
+    --bootloader systemd --generic-image --target-imgref "$img:latest" "${keys[@]}" \
     > "/out/bootc-install-v$v.log" 2>&1 || { tail -30 "/out/bootc-install-v$v.log"; exit 1; }
 cp --sparse=always /work/disk.raw /out/bootc-disk.raw
 echo "v$v installed, tracking $img:latest"

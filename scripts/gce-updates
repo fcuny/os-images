@@ -4,6 +4,7 @@
 set -eu
 . "$(dirname "$0")/lib.sh"
 . "$(dirname "$0")/gce-env"
+: "${GCE_UPDATES_BUCKET:?set GCE_UPDATES_BUCKET}"
 "$(dirname "$0")/publish" "$@" >/dev/null
 gcloud storage rsync --delete-unmatched-destination-objects "$STATE/updates" "gs://$GCE_UPDATES_BUCKET" --project "$GCE_PROJECT"
 gcloud storage ls "gs://$GCE_UPDATES_BUCKET/" --project "$GCE_PROJECT"

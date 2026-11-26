@@ -21,7 +21,7 @@ COPY --from=builder /output/ /
 RUN apt-get update -q && \
     apt-get install -y -q --no-install-recommends \
         systemd systemd-sysv systemd-boot systemd-boot-efi systemd-resolved udev dbus \
-        linux-image-arm64 dracut \
+        linux-image-cloud-arm64 dracut \
         libostree-1-1 composefs skopeo podman zstd \
         e2fsprogs dosfstools fdisk util-linux \
         openssh-server ca-certificates iproute2 less && \

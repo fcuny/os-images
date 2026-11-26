@@ -195,6 +195,24 @@ scripts/vm-ssh systemctl reboot
 
 `scripts/bootc-vm-stop` powers off the VM and keeps its disk. `scripts/workbench-stop` stops the workbench, and its registry goes with it.
 
+### bootc on Google Cloud
+
+The **bootc image** workflow builds a version on GitHub's arm64 runner and publishes it to `ghcr.io/fcuny/os-images/debian-bootc` as `:vN` and `:latest`. Run it from the Actions tab, or:
+
+```sh
+gh workflow run bootc-image.yml -f version=1
+```
+
+Make the package public once, in its settings on GitHub, so hosts pull it without credentials. Then, with `GCE_PROJECT`, `GCE_ZONE` and `GCE_BUCKET` set as above and the workbench running:
+
+```sh
+scripts/bootc-gce-image 1   # install it on a disk, upload it and create the image bootc-demo-1
+scripts/bootc-gce-vm 1      # start a c4a-standard-1 named bootc-demo, and print its IP
+ssh -i .state/keys/id_ed25519 root@<IP> bootc upgrade
+```
+
+The host tracks `ghcr.io`'s `:latest`. GCE has no SMBIOS credentials, and the image runs no guest agent, so `bootc install` writes root's `authorized_keys` (`--root-ssh-authorized-keys`). Debian's cloud kernel has the driver for Google's virtual network card (gVNIC). Delete the VM and the image when you're done.
+
 ## Not done yet
 
 - **Update files aren't signed.** The transfers set `Verify=no`. Signed `SHA256SUMS` and signed verity root hashes come with the secure boot note.
