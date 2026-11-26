@@ -49,6 +49,13 @@ RUN rm -rf /root /home /srv /mnt /opt /etc/hostname && \
 
 RUN systemctl enable systemd-networkd systemd-resolved ssh
 
+# Installing systemd, dbus and openssh-server made a machine ID (twice: dbus
+# keeps a copy in /var, where systemd also reads it) and SSH host keys, which
+# every host would share. With "uninitialized", a host's first boot is a first
+# boot: systemd makes its own ID, and sshd-keygen.service its own keys.
+RUN rm -f /etc/ssh/ssh_host_* /var/lib/dbus/machine-id && \
+    echo uninitialized > /etc/machine-id
+
 # Last, so that a new version only changes the final layers.
 # REGISTRY is the workbench's registry, which serves updates over plain HTTP.
 ARG REGISTRY

@@ -1,0 +1,4 @@
+# systemd applies presets on a host's first boot. bootc's own preset enables
+# automatic updates, which pull, stage and reboot on a timer. The demo
+# updates by hand, so each step shows.
+disable bootc-fetch-apply-updates.timer
