@@ -14,6 +14,10 @@ ENV CARGO_HOME=/opt/rust RUSTUP_HOME=/opt/rust PATH=/opt/rust/bin:$PATH
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -q -y --profile minimal
 RUN git clone -q --depth 1 --branch "$BOOTC_VERSION" https://github.com/bootc-dev/bootc /src
 WORKDIR /src
+# bootc's release profile keeps debug info, for packaging that splits it out
+# (it made /usr/bin/bootc 416 MB). Nothing splits it here, so don't build it.
+# Cargo then strips the standard library's debug info too, and keeps symbols.
+ENV CARGO_PROFILE_RELEASE_DEBUG=false
 RUN make bin install DESTDIR=/output DISABLE_DOCS=1
 
 FROM docker.io/library/debian:forky
