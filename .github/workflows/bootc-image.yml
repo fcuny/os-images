@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 # Build the bootc image at a version and publish it to ghcr.io as :vVERSION and :latest.
-# Hosts installed from it track :latest and pull it without credentials once the
-# package is public (the package's settings on GitHub, once).
+# Hosts installed from it track :latest. The package takes its visibility from
+# this public repository, so they pull it without credentials.
 name: bootc image
 
 on:

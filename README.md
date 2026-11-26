@@ -203,7 +203,7 @@ The **bootc image** workflow builds a version on GitHub's arm64 runner and publi
 gh workflow run bootc-image.yml -f version=1
 ```
 
-Make the package public once, in its settings on GitHub, so hosts pull it without credentials. Then, with `GCE_PROJECT`, `GCE_ZONE` and `GCE_BUCKET` set as above and the workbench running:
+The package takes its visibility from this public repository, so hosts pull it without credentials. With `GCE_PROJECT`, `GCE_ZONE` and `GCE_BUCKET` set as above and the workbench running:
 
 ```sh
 scripts/bootc-gce-image 1   # install it on a disk, upload it and create the image bootc-demo-1
