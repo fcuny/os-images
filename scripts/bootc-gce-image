@@ -11,10 +11,11 @@ v=${1:?usage: bootc-gce-image VERSION}
 reg=${BOOTC_REGISTRY:-ghcr.io/fcuny/os-images}
 ip=$(workbench_ip); [ -n "$ip" ] || { echo "no workbench running (scripts/bootc-workbench)" >&2; exit 1; }
 # GCE imports a file named disk.raw, a whole number of GiB, in a tar.gz that GNU tar wrote.
+# The install leaves /work/disk.raw, 10 GiB and sparse, on the workbench's own disk: pack
+# that one, not the copy in /out, which crosses the shared folder twice.
 # shellcheck disable=SC2086,SC2029
-ssh $SSH_OPTS "root@$ip" "set -e; bootc-install-image $v $reg /keys/id_ed25519.pub
-    d=\$(mktemp -d /var/tmp/gce.XXXX); mv /out/bootc-disk.raw \$d/disk.raw
-    tar --format=oldgnu -Sczf /out/bootc-demo-$v.gce.tar.gz -C \$d disk.raw; rm -rf \$d"
+ssh $SSH_OPTS "root@$ip" "set -e; bootc-install-image $v $reg /keys/id_ed25519.pub; rm -f /out/bootc-disk.raw
+    tar --format=oldgnu -Sczf /out/bootc-demo-$v.gce.tar.gz -C /work disk.raw"
 gcloud storage cp "$STATE/out/bootc-demo-$v.gce.tar.gz" "gs://$GCE_BUCKET/images/" --project "$GCE_PROJECT"
 gcloud compute images create "bootc-demo-$v" --project "$GCE_PROJECT" \
     --source-uri "gs://$GCE_BUCKET/images/bootc-demo-$v.gce.tar.gz" \
