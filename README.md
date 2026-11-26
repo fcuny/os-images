@@ -123,10 +123,27 @@ Then update and reboot as above. Each try waits for `/usr`, lands in emergency m
 
 ## On Google Cloud
 
-The Debian variant boots on a C4A machine (Google Axion, arm64), and updates from a public Cloud Storage bucket. Set the project, a zone with C4A machines, a private bucket for the image upload, and a public bucket for the update files (Cloud Storage can't make one folder of a bucket public):
+The Debian variant boots on a C4A machine (Google Axion, arm64), and updates from a public Cloud Storage bucket. The scripts use this repository's project by default (`scripts/gce-env`):
+
+| Variable | Default | What it is |
+|---|---|---|
+| `GCE_PROJECT` | `os-images-515517` | the project |
+| `GCE_ZONE` | `us-west1-a` | a zone with C4A machines |
+| `GCE_BUCKET` | `os-images-515517-images` | a private bucket for the image upload |
+| `GCE_UPDATES_BUCKET` | none | a public bucket for the mkosi image's update files (Cloud Storage can't make one folder of a bucket public) |
+
+Set them in your shell to use your own project:
 
 ```sh
 export GCE_PROJECT=my-project GCE_ZONE=us-central1-b GCE_BUCKET=my-images GCE_UPDATES_BUCKET=my-updates
+```
+
+The image bucket is private, and deletes uploads after 7 days: a GCE image keeps its own copy once imported. To make one in another project:
+
+```sh
+gcloud storage buckets create gs://$GCE_BUCKET --project $GCE_PROJECT --location ${GCE_ZONE%-*} --uniform-bucket-level-access --public-access-prevention
+echo '{"rule":[{"action":{"type":"Delete"},"condition":{"age":7}}]}' > lifecycle.json
+gcloud storage buckets update gs://$GCE_BUCKET --lifecycle-file lifecycle.json
 ```
 
 Then, with the workbench running:
@@ -203,7 +220,7 @@ The **bootc image** workflow builds a version on GitHub's arm64 runner and publi
 gh workflow run bootc-image.yml -f version=1
 ```
 
-The package takes its visibility from this public repository, so hosts pull it without credentials. With `GCE_PROJECT`, `GCE_ZONE` and `GCE_BUCKET` set as above and the workbench running:
+The package takes its visibility from this public repository, so hosts pull it without credentials. With the workbench running:
 
 ```sh
 scripts/bootc-gce-image 1   # install it on a disk, upload it and create the image bootc-demo-1
