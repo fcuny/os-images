@@ -8,7 +8,7 @@ FROM docker.io/library/debian:forky AS builder
 ARG BOOTC_VERSION
 RUN apt-get update -q && \
     apt-get install -y -q --no-install-recommends \
-        ca-certificates curl git build-essential pkgconf go-md2man \
+        ca-certificates curl git build-essential pkgconf \
         libzstd-dev libssl-dev libostree-dev libselinux1-dev libclang-dev
 ENV CARGO_HOME=/opt/rust RUSTUP_HOME=/opt/rust PATH=/opt/rust/bin:$PATH
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -q -y --profile minimal
